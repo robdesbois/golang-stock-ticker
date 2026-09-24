@@ -28,16 +28,22 @@ go test ./...
 
 ## Docker
 
-Build the image:
+Pull the published image from [Docker Hub](https://hub.docker.com/r/robdesbois/stock-ticker):
 
 ```sh
-docker build -t stockticker .
+docker pull robdesbois/stock-ticker:latest
+```
+
+Or build it yourself:
+
+```sh
+docker build -t robdesbois/stock-ticker:latest .
 ```
 
 Run it (env vars are supplied at run time, never baked into the image):
 
 ```sh
-docker run -p 8080:8080 -e SYMBOL=MSFT -e NDAYS=7 -e APIKEY=your-alphavantage-api-key stockticker
+docker run -p 8080:8080 -e SYMBOL=MSFT -e NDAYS=7 -e APIKEY=your-alphavantage-api-key robdesbois/stock-ticker:latest
 ```
 
 Then:
@@ -55,7 +61,8 @@ minikube start
 minikube addons enable ingress
 ```
 
-Build the image directly into minikube's Docker daemon (no registry push needed for local testing):
+Build the image directly into minikube's Docker daemon (no registry push needed for local testing;
+this local build is separate from the tag published to Docker Hub):
 
 ```sh
 eval $(minikube docker-env)
