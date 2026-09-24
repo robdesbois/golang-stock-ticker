@@ -78,9 +78,10 @@ kubectl create secret generic stockticker-secret \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-Point a hostname at the ingress and curl it:
+Point a hostname at the ingress and curl it. The ingress-nginx addon redirects HTTP to
+HTTPS by default, so use `https://` with `-k` (self-signed cert) or follow the redirect:
 
 ```sh
 echo "$(minikube ip) stockticker.local" | sudo tee -a /etc/hosts
-curl http://stockticker.local/
+curl -k https://stockticker.local/
 ```
