@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/robdesbois/golang-stock-ticker/alphavantage"
 	"github.com/robdesbois/golang-stock-ticker/config"
@@ -20,12 +21,21 @@ func main() {
 		log.Fatalf("loading config: %v", err)
 	}
 
-	client := alphavantage.New(cfg.APIKey, http.DefaultClient)
+	upstreamClient := &http.Client{Timeout: 10 * time.Second}
+	client := alphavantage.New(cfg.APIKey, upstreamClient)
 	service := ticker.New(client)
 	handler := httpapi.NewHandler(service, cfg.Symbol, cfg.NDays)
 
+	server := &http.Server{
+		Addr:         addr,
+		Handler:      handler,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
 	log.Printf("listening on %s for %s over the last %d days", addr, cfg.Symbol, cfg.NDays)
-	if err := http.ListenAndServe(addr, handler); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }
