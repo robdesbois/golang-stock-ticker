@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stockticker
+spec:
+  ingressClassName: nginx
+  # No secretName: ingress-nginx terminates TLS with its own self-signed
+  # default certificate.
+  # Fine for local testing, though not trusted so browsers will warn/curl will need -k
+  # TODO: Use a real cert (e.g. cert-manager) for productisation
+  tls:
+    - hosts:
+        - stockticker.local
+  rules:
+    - host: stockticker.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stockticker
+                port:
+                  number: 80

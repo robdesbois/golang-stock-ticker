@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stockticker
+  labels:
+    app: stockticker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stockticker
+  template:
+    metadata:
+      labels:
+        app: stockticker
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: stockticker
+          image: robdesbois/stock-ticker:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: stockticker-config
+            - secretRef:
+                name: stockticker-secret
+          securityContext:
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # No /healthz endpoint exists (deferred, see PLAN.md); the handler's only route calls
+          # the rate-limited upstream API on every request, so probes stay at TCP-level only.
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi

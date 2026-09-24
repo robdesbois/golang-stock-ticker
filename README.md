@@ -45,3 +45,35 @@ Then:
 ```sh
 curl http://localhost:8080/
 ```
+
+## Kubernetes (Part 2)
+
+Manifests live in `deploy/k8s/`. Tested against minikube with the `ingress` addon.
+
+```sh
+minikube start
+minikube addons enable ingress
+```
+
+Build the image directly into minikube's Docker daemon (no registry push needed for local testing):
+
+```sh
+eval $(minikube docker-env)
+docker build -t robdesbois/stock-ticker:latest .
+```
+
+Apply the manifests, then populate the Secret with your real API key (never commit a real key into `secret.yaml`):
+
+```sh
+kubectl apply -f deploy/k8s/
+kubectl create secret generic stockticker-secret \
+  --from-literal=APIKEY=your-alphavantage-api-key \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Point a hostname at the ingress and curl it:
+
+```sh
+echo "$(minikube ip) stockticker.local" | sudo tee -a /etc/hosts
+curl http://stockticker.local/
+```
