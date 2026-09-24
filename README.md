@@ -4,6 +4,9 @@ Web service that fetches the last `NDAYS` daily closing prices for `SYMBOL` from
 [Alpha Vantage](https://www.alphavantage.co/documentation/#daily) and returns them
 along with the average close.
 
+See [RESILIENCE.md](RESILIENCE.md) for what's deliberately deferred/out of scope and what
+production readiness would require.
+
 ## Configuration
 
 Set via environment variables (see `.env.example`):
