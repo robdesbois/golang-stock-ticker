@@ -22,6 +22,26 @@ and fill in your own key for local runs.
 ## Build & run
 
 ```sh
-go build ./...
+go build -o stockticker ./cmd/stockticker
 go test ./...
+```
+
+## Docker
+
+Build the image:
+
+```sh
+docker build -t stockticker .
+```
+
+Run it (env vars are supplied at run time, never baked into the image):
+
+```sh
+docker run -p 8080:8080 -e SYMBOL=MSFT -e NDAYS=7 -e APIKEY=your-alphavantage-api-key stockticker
+```
+
+Then:
+
+```sh
+curl http://localhost:8080/
 ```
