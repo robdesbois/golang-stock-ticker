@@ -34,19 +34,19 @@ go test ./...
 Pull the published image from [Docker Hub](https://hub.docker.com/r/robdesbois/stock-ticker):
 
 ```sh
-docker pull robdesbois/stock-ticker:latest
+docker pull robdesbois/stock-ticker:v0.1.0
 ```
 
 Or build it yourself:
 
 ```sh
-docker build -t robdesbois/stock-ticker:latest .
+docker build -t robdesbois/stock-ticker:v0.1.0 .
 ```
 
 Run it (env vars are supplied at run time, never baked into the image):
 
 ```sh
-docker run -p 8080:8080 -e SYMBOL=MSFT -e NDAYS=7 -e APIKEY=your-alphavantage-api-key robdesbois/stock-ticker:latest
+docker run -p 8080:8080 -e SYMBOL=MSFT -e NDAYS=7 -e APIKEY=your-alphavantage-api-key robdesbois/stock-ticker:v0.1.0
 ```
 
 Then:
@@ -69,7 +69,7 @@ this local build is separate from the tag published to Docker Hub):
 
 ```sh
 eval $(minikube docker-env)
-docker build -t robdesbois/stock-ticker:latest .
+docker build -t robdesbois/stock-ticker:v0.1.0 .
 ```
 
 Apply the manifests, then populate the Secret with your real API key (never commit a real key into `secret.yaml`):

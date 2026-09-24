@@ -21,7 +21,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: stockticker
-          image: robdesbois/stock-ticker:latest
+          image: robdesbois/stock-ticker:v0.1.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
