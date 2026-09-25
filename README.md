@@ -48,19 +48,19 @@ curl http://localhost:8080/
 Pull the published image from [Docker Hub](https://hub.docker.com/r/robdesbois/stock-ticker):
 
 ```sh
-docker pull robdesbois/stock-ticker:v0.1.0
+docker pull robdesbois/stock-ticker:v0.1.1
 ```
 
 Or build it yourself:
 
 ```sh
-docker build -t robdesbois/stock-ticker:v0.1.0 .
+docker build -t robdesbois/stock-ticker:v0.1.1 .
 ```
 
 Run it (env vars are supplied at run time, never baked into the image):
 
 ```sh
-docker run --env-file .env -p 8080:8080 robdesbois/stock-ticker:v0.1.0
+docker run --env-file .env -p 8080:8080 robdesbois/stock-ticker:v0.1.1
 ```
 
 Then:
@@ -104,7 +104,7 @@ this local build is separate from the tag published to Docker Hub):
 
 ```sh
 eval $(minikube docker-env)
-docker build -t robdesbois/stock-ticker:v0.1.0 .
+docker build -t robdesbois/stock-ticker:v0.1.1 .
 ```
 
 Apply the manifests, then populate the Secret with your real API key from `.env` (never commit
