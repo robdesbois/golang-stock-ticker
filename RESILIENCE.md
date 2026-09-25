@@ -115,6 +115,18 @@ immutable tags: automate it via GitOps tooling (a Kustomize image transformer, a
 an image-updater such as Argo CD Image Updater/Flux), so a new release is a one-line change that
 propagates through normal deployment pipelines rather than manual editing per environment.
 
+## Namespace isolation
+
+None of the manifests in `deploy/k8s/` specify a `metadata.namespace`, nor is there a `Namespace`
+resource — so `kubectl apply -f deploy/k8s/` deploys into whatever namespace is already active in
+the caller's context (`default`, unless overridden). That's fine for a single local minikube
+cluster, but risky on any shared/real cluster: no isolation from other teams' workloads, no
+namespace-scoped RBAC/ResourceQuotas/NetworkPolicies, and a real chance of naming collisions or
+applying into the wrong namespace by mistake.
+
+Production would add a dedicated `Namespace` manifest (e.g. `stockticker`), set that namespace on
+every other resource, and scope RBAC/quotas/NetworkPolicies to it.
+
 ## Retries / backoff
 
 `alphavantage.Client` currently treats any non-200 response or unexpected shape as a single
