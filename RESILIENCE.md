@@ -57,9 +57,8 @@ but can't help if the upstream is down with an empty/expired cache.
 ## Caching (deferred decorator)
 
 A TTL-memoising decorator around `alphavantage.Client` (1 hour, fixed window) was designed but
-deferred — see PLAN.md's "Deferred follow-ups". It directly addresses the 25 requests/day quota:
-without it, restarts, redeploys, or multiple manual/automated calls exhaust the daily allowance
-quickly.
+deferred. It would directly address the 25 requests/day quota: without it, restarts, redeploys,
+or multiple manual/automated calls exhaust the daily allowance quickly.
 
 Two further production-grade refinements, both explicitly out of scope for this exercise:
 - **Timezone-aware cache expiry**: a fixed 1-hour TTL is simple but arbitrary. Alpha Vantage

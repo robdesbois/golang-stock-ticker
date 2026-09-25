@@ -36,7 +36,7 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
-          # No /healthz endpoint exists (deferred, see PLAN.md); the handler's only route calls
+          # No /healthz endpoint exists (deferred); the handler's only route calls
           # the rate-limited upstream API on every request, so probes stay at TCP-level only.
           readinessProbe:
             tcpSocket:
