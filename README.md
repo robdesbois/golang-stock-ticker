@@ -20,13 +20,27 @@ Set via environment variables (see `.env.example`):
 The server listens on port `8080`.
 
 Never commit a real API key. `.env` is gitignored; copy `.env.example` to `.env`
-and fill in your own key for local runs.
+and fill in your own key for local runs. `.env` is the single local source of truth reused
+by every run method below (standalone binary, Docker, Kubernetes).
 
 ## Build & run
 
 ```sh
 go build -o stockticker ./cmd/stockticker
 go test ./...
+```
+
+Run it (loads `SYMBOL`, `NDAYS`, `APIKEY` from `.env` — see Configuration above):
+
+```sh
+set -a; source .env; set +a
+./stockticker
+```
+
+Then, in another terminal:
+
+```sh
+curl http://localhost:8080/
 ```
 
 ## Docker
@@ -46,7 +60,7 @@ docker build -t robdesbois/stock-ticker:v0.1.0 .
 Run it (env vars are supplied at run time, never baked into the image):
 
 ```sh
-docker run -p 8080:8080 -e SYMBOL=MSFT -e NDAYS=7 -e APIKEY=your-alphavantage-api-key robdesbois/stock-ticker:v0.1.0
+docker run --env-file .env -p 8080:8080 robdesbois/stock-ticker:v0.1.0
 ```
 
 Then:
@@ -72,12 +86,13 @@ eval $(minikube docker-env)
 docker build -t robdesbois/stock-ticker:v0.1.0 .
 ```
 
-Apply the manifests, then populate the Secret with your real API key (never commit a real key into `secret.yaml`):
+Apply the manifests, then populate the Secret with your real API key from `.env` (never commit
+a real key into `secret.yaml`):
 
 ```sh
 kubectl apply -f deploy/k8s/
 kubectl create secret generic stockticker-secret \
-  --from-literal=APIKEY=your-alphavantage-api-key \
+  --from-literal=APIKEY="$(grep '^APIKEY=' .env | cut -d= -f2-)" \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
