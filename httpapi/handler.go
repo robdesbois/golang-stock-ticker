@@ -51,6 +51,10 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
+// successCacheControl lets clients/proxies reuse a response for up to an hour, reducing
+// repeat hits against the rate-limited upstream API (see RESILIENCE.md).
+const successCacheControl = "public, max-age=3600"
+
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// NB: no path-based routing: only have 1 capability to expose
 
@@ -70,14 +74,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !writeJSON(w, http.StatusOK, toReportResponse(report)) {
+	if !writeJSON(w, http.StatusOK, toReportResponse(report), successCacheControl) {
 		writeJSONError(w, http.StatusInternalServerError, "internal server error")
 	}
 }
 
-// writeJSON marshals body and writes it as a JSON response with the given status,
-// reporting false (without writing anything) if marshaling fails.
-func writeJSON(w http.ResponseWriter, status int, body any) bool {
+// writeJSON marshals body and writes it as a JSON response with the given status and an
+// optional Cache-Control value (empty string omits the header), reporting false (without
+// writing anything) if marshaling fails.
+func writeJSON(w http.ResponseWriter, status int, body any, cacheControl string) bool {
 	var buf bytes.Buffer
 	if err := json.MarshalWrite(&buf, body); err != nil {
 		return false
@@ -85,6 +90,9 @@ func writeJSON(w http.ResponseWriter, status int, body any) bool {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+	if cacheControl != "" {
+		w.Header().Set("Cache-Control", cacheControl)
+	}
 	w.WriteHeader(status)
 	w.Write(buf.Bytes())
 	return true
@@ -93,7 +101,7 @@ func writeJSON(w http.ResponseWriter, status int, body any) bool {
 // writeJSONError writes message as a JSON error response, falling back to a plain-text
 // body (which cannot fail to marshal) if that somehow fails, so a response is always sent.
 func writeJSONError(w http.ResponseWriter, status int, message string) {
-	if !writeJSON(w, status, errorResponse{Error: message}) {
+	if !writeJSON(w, status, errorResponse{Error: message}, "") {
 		http.Error(w, message, status)
 	}
 }

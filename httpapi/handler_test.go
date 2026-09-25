@@ -51,6 +51,9 @@ func TestServeHTTP_Success(t *testing.T) {
 	if got := rec.Header().Get("Content-Length"); got != strconv.Itoa(rec.Body.Len()) {
 		t.Fatalf("Content-Length = %q, want %q", got, strconv.Itoa(rec.Body.Len()))
 	}
+	if got := rec.Header().Get("Cache-Control"); got != successCacheControl {
+		t.Fatalf("Cache-Control = %q, want %q", got, successCacheControl)
+	}
 
 	var got reportResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
@@ -102,6 +105,9 @@ func TestServeHTTP_Errors(t *testing.T) {
 			}
 			if got.Error == "" {
 				t.Fatalf("body error message is empty")
+			}
+			if got := rec.Header().Get("Cache-Control"); got != "" {
+				t.Fatalf("Cache-Control = %q, want unset for error responses", got)
 			}
 		})
 	}
