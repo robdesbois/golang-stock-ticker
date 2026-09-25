@@ -69,6 +69,27 @@ Then:
 curl http://localhost:8080/
 ```
 
+### Publishing a release
+
+Build and push both the version tag and `latest` to Docker Hub (requires `docker login`
+with push access to `robdesbois/stock-ticker`):
+
+```sh
+docker build -t robdesbois/stock-ticker:vX.Y.Z -t robdesbois/stock-ticker:latest .
+docker push robdesbois/stock-ticker:vX.Y.Z
+docker push robdesbois/stock-ticker:latest
+```
+
+Tag the matching commit in git so the image version and source stay traceable:
+
+```sh
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+If a tag is later moved to a different commit, rebuild and re-push the same image tag
+so Docker Hub matches; this overwrites the existing public tag, so only do it deliberately.
+
 ## Kubernetes (Part 2)
 
 Manifests live in `deploy/k8s/`. Tested against minikube with the `ingress` addon.
