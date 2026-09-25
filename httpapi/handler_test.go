@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"errors"
 	"net/http"
@@ -32,7 +33,7 @@ func TestServeHTTP_Success(t *testing.T) {
 			{Date: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC), Price: 124.56},
 			{Date: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC), Price: 123.45},
 		},
-		MeanClose: 124.005,
+		MeanClose: 497.13714285714286,
 	}
 
 	handler := NewHandler(&fakeGenerator{report: report}, "MSFT", 2)
@@ -66,7 +67,7 @@ func TestServeHTTP_Success(t *testing.T) {
 			{Date: "2024-01-02", Close: 124.56},
 			{Date: "2024-01-01", Close: 123.45},
 		},
-		AverageClose: 124.005,
+		AverageClose: jsontext.Value("497.14"),
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("body = %+v, want %+v", got, want)

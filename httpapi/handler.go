@@ -4,10 +4,11 @@ package httpapi
 import (
 	"bytes"
 	"context"
+	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"errors"
+	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -37,9 +38,9 @@ func NewHandler(generator ReportGenerator, symbol string, ndays int) *Handler {
 
 // reportResponse is the response body format for a ticker.Report.
 type reportResponse struct {
-	Symbol       string     `json:"symbol"`
-	Days         []dayClose `json:"days"`
-	AverageClose float64    `json:"averageClose"`
+	Symbol       string         `json:"symbol"`
+	Days         []dayClose     `json:"days"`
+	AverageClose jsontext.Value `json:"averageClose"`
 }
 
 // dayClose is a single day's closing price in the response body.
@@ -122,8 +123,9 @@ func toReportResponse(report ticker.Report) reportResponse {
 	}
 
 	return reportResponse{
-		Symbol:       report.Symbol,
-		Days:         days,
-		AverageClose: report.MeanClose,
+		Symbol: report.Symbol,
+		Days:   days,
+		// Formatted (not rounded) to 2dp: the wire value is a display concern, the domain average keeps full precision.
+		AverageClose: jsontext.Value(fmt.Sprintf("%.2f", report.MeanClose)),
 	}
 }
