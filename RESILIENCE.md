@@ -35,6 +35,25 @@ Production would:
   briefly) so Kubernetes' endpoint-removal and the app's own shutdown are coordinated — otherwise
   a request can still arrive at a pod that's mid-shutdown.
 
+## Availability
+
+`deploy/k8s/deployment.yaml` currently sets `replicas: 1` — a single pod. Any restart (crash,
+node drain, rolling update) causes a brief total outage while a replacement pod starts and
+passes its readiness probe, and there's no redundancy across nodes or availability zones.
+
+Production would add:
+- More replicas — but naively, see Scaling below: this multiplies upstream API calls per
+  replica without a shared cache in place first.
+- A `PodDisruptionBudget`, so voluntary disruptions (node drains, cluster upgrades) can't take
+  down all replicas at once.
+- Pod anti-affinity or topology spread constraints, so replicas land on different nodes/zones
+  and a single node/zone failure doesn't take the whole service down.
+
+None of this addresses availability of the Alpha Vantage dependency itself — if it's down or
+rate-limiting, this service can't serve fresh data regardless of its own replica count. Caching
+(below) reduces how often that matters (most requests served from cache rather than upstream),
+but can't help if the upstream is down with an empty/expired cache.
+
 ## Caching (deferred decorator)
 
 A TTL-memoising decorator around `alphavantage.Client` (1 hour, fixed window) was designed but
@@ -54,6 +73,47 @@ Two further production-grade refinements, both explicitly out of scope for this 
   multiplying quota consumption by replica count. A shared cache (Redis/Memcached, or similar)
   would give one cache shared across all replicas, which is what actually protects the quota at
   any scale beyond a single replica.
+
+## Scaling
+
+Horizontal scaling (more replicas) is the natural Kubernetes-native answer to load, but is
+actively counter-productive here until the shared-caching gap above is closed: each replica
+independently calls the rate-limited upstream API, so replica count directly multiplies quota
+consumption — 3 replicas triples the realistic risk of exhausting a 25/day quota. A
+`HorizontalPodAutoscaler` driven by CPU/memory would also be the wrong signal: this service's
+real bottleneck is an external, I/O-bound quota, not compute — per-request latency is dominated
+by waiting on the remote API response, so CPU/memory usage stays flat regardless of concurrency.
+
+Vertical scaling (larger requests/limits) doesn't help either — this is a lightweight,
+mostly-idle-between-requests workload with no CPU/memory pressure to relieve.
+
+The realistic production path: add the shared cache first (see Caching above), which both
+reduces upstream calls per request *and* makes scaling out safe/meaningful (most requests served
+from cache) — directly enabling the multi-replica availability improvements described above
+without multiplying quota consumption.
+
+## Image tag mutability
+
+Current choice: images are published under immutable, versioned tags (`v0.1.0`, not a floating
+tag like `:latest`), and the Deployment uses `imagePullPolicy: IfNotPresent`. This is intentional
+and self-consistent: since a given tag's content is guaranteed to never change, letting nodes
+reuse an already-pulled image for that tag is safe — there's nothing new to fetch.
+
+The trade-off: if a security issue (e.g. a base-image CVE) is found in an already-deployed image,
+the fix is a **new** tag (`v0.1.1`), not an update to the existing one — every manifest/environment
+referencing the old tag must be updated to point at the new one. Many organisations deliberately
+accept that coordination cost in exchange for auditability (you can always tell exactly what's
+running from its tag) and safe rollback (the old tag still means what it always meant).
+
+The alternative — a floating/mutable tag plus `imagePullPolicy: Always` — avoids the
+update-every-manifest step, but loses that auditability/rollback guarantee, and *still* doesn't
+automatically fix already-running pods: Kubernetes doesn't restart a pod just because the
+registry content behind its image tag changed elsewhere. A rollout restart is required either way.
+
+Production mitigation for the "propagate the version bump everywhere" cost, while keeping
+immutable tags: automate it via GitOps tooling (a Kustomize image transformer, a Helm value, or
+an image-updater such as Argo CD Image Updater/Flux), so a new release is a one-line change that
+propagates through normal deployment pipelines rather than manual editing per environment.
 
 ## Retries / backoff
 
