@@ -6,6 +6,8 @@ import (
 	"context"
 	"encoding/json/v2"
 	"errors"
+	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -66,6 +68,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	report, err := h.generator.GenerateReport(r.Context(), h.symbol, h.ndays)
 	if err != nil {
+		log.Printf("httpapi: generating report for %s: %v", h.symbol, err)
 		if errors.Is(err, alphavantage.ErrUpstream) || errors.Is(err, ticker.ErrNoData) {
 			writeJSONError(w, http.StatusBadGateway, "upstream data provider error")
 			return
@@ -85,6 +88,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, status int, body any, cacheControl string) bool {
 	var buf bytes.Buffer
 	if err := json.MarshalWrite(&buf, body); err != nil {
+		log.Printf("httpapi: marshaling response: %v", err)
 		return false
 	}
 

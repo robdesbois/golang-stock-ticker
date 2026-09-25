@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"slices"
@@ -67,6 +68,7 @@ func (c *HTTPClient) FetchClosingPrices(ctx context.Context, symbol string) ([]C
 		return nil, fmt.Errorf("alphavantage: building request: %w", err)
 	}
 
+	log.Printf("alphavantage: requesting closing prices for %s", symbol)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("alphavantage: performing request: %w", err)
